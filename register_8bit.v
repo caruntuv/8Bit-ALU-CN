@@ -1,17 +1,6 @@
-// Positive-edge D flip-flop implemented as a User Defined Primitive (UDP)
-// UDPs allow defining custom gate behavior using a truth table
-primitive dff_posedge (output reg q, input clk, input d);
-    table
-    //  clk   d  :  q  :  q+
-        (01)  0  :  ?  :  0 ;   // rising edge, d=0 -> q becomes 0
-        (01)  1  :  ?  :  1 ;   // rising edge, d=1 -> q becomes 1
-        (0x)  1  :  1  :  1 ;   // clk uncertain, d=1, q=1 -> hold
-        (0x)  0  :  0  :  0 ;   // clk uncertain, d=0, q=0 -> hold
-        (?0)  ?  :  ?  :  - ;   // falling or stable clk -> hold q
-        ?    (?):  ?  :  - ;    // d changes but clk not rising -> hold q
-    endtable
-endprimitive
-
+// 8-bit register: load-enable, output-enable, synchronous reset.
+// Built entirely from dff_posedge primitives and gate-level logic.
+// No always blocks.
 module register_8bit (
     input  wire        clk,
     input  wire        rst,
@@ -20,11 +9,9 @@ module register_8bit (
     input  wire [7:0]  D,
     output wire [7:0]  Q
 );
-    wire [7:0] data;
-    wire [7:0] d_next;
-    wire [7:0] dff_d;
-    wire load_n;
-    wire rst_n;
+    wire [7:0] stored;   // outputs of the 8 DFFs
+    wire [7:0] dff_d;    // inputs  to  the 8 DFFs
+    wire load_n, rst_n;
 
     not g_load_n (load_n, load);
     not g_rst_n  (rst_n,  rst);
@@ -32,17 +19,16 @@ module register_8bit (
     genvar i;
     generate
         for (i = 0; i < 8; i = i + 1) begin : bit_cell
-            wire mux_new, mux_keep, mux_out;
-            // Mux: if load=1 take D[i], else keep data[i]
-            and g_new  (mux_new,  D[i],    load);
-            and g_keep (mux_keep, data[i], load_n);
-            or  g_next (mux_out,  mux_new, mux_keep);
-            // If rst=1, force 0 into the DFF
-            and g_dff  (dff_d[i], mux_out, rst_n);
-            // Instantiate one DFF per bit
-            dff_posedge dff_inst (.clk(clk), .d(dff_d[i]), .q(data[i]));
+            wire sel_D, sel_Q, mux_out;
+            // Mux: load=1 -> take D[i], load=0 -> keep stored[i]
+            and g_selD (sel_D,  D[i],      load);
+            and g_selQ (sel_Q,  stored[i], load_n);
+            or  g_mux  (mux_out, sel_D, sel_Q);
+            // Reset: rst=1 -> force 0 into DFF
+            and g_rst  (dff_d[i], mux_out, rst_n);
+            dff_posedge dff (.clk(clk), .d(dff_d[i]), .q(stored[i]));
         end
     endgenerate
 
-    assign Q = oe ? data : 8'bz;
+    assign Q = oe ? stored : 8'bz;
 endmodule
