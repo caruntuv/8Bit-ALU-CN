@@ -1,10 +1,10 @@
-// Single positive-edge-triggered D flip-flop.
-// This module contains the ONE and ONLY always block in the entire design.
-// Every register in every module is built by instantiating this.
+// flip-flop d pe front pozitiv
+// singurul always din proiect
+// folosit pentru registre
 module dff_posedge (
-    output reg q,
-    input      clk,
-    input      d
+    output reg q,    // iesire memorata
+    input      clk,  // semnal ceas
+    input      d     // intrare date
 );
-    always @(posedge clk) q <= d;
+    always @(posedge clk) q <= d; // salveaza d la front pozitiv
 endmodule
