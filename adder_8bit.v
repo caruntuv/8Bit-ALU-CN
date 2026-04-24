@@ -1,22 +1,24 @@
 module adder_8bit (
-    input  wire [7:0] A,
-    input  wire [7:0] B,
-    input  wire       Cin,
-    input  wire       enable,       
-    output wire [7:0] Sum,
-    output wire       Cout
+    input  wire [7:0] A,        // operand a
+    input  wire [7:0] B,        // operand b
+    input  wire       Cin,      // carry initial
+    input  wire       enable,   // activare iesiri
+    output wire [7:0] Sum,      // suma finala
+    output wire       Cout      // carry final
 );
-    wire [6:0] carry;               
-    wire [7:0] raw_sum;
-    wire       raw_cout;
-    full_adder fa0 (.a(A[0]), .b(B[0]), .cin(Cin),     .sum(raw_sum[0]), .cout(carry[0]));
-    full_adder fa1 (.a(A[1]), .b(B[1]), .cin(carry[0]), .sum(raw_sum[1]), .cout(carry[1]));
-    full_adder fa2 (.a(A[2]), .b(B[2]), .cin(carry[1]), .sum(raw_sum[2]), .cout(carry[2]));
-    full_adder fa3 (.a(A[3]), .b(B[3]), .cin(carry[2]), .sum(raw_sum[3]), .cout(carry[3]));
-    full_adder fa4 (.a(A[4]), .b(B[4]), .cin(carry[3]), .sum(raw_sum[4]), .cout(carry[4]));
-    full_adder fa5 (.a(A[5]), .b(B[5]), .cin(carry[4]), .sum(raw_sum[5]), .cout(carry[5]));
-    full_adder fa6 (.a(A[6]), .b(B[6]), .cin(carry[5]), .sum(raw_sum[6]), .cout(carry[6]));
-    full_adder fa7 (.a(A[7]), .b(B[7]), .cin(carry[6]), .sum(raw_sum[7]), .cout(raw_cout));
-    assign Sum  = enable ? raw_sum  : 8'bz;
-    assign Cout = enable ? raw_cout : 1'bz;
+    wire [6:0] carry;           // carry intre biti
+    wire [7:0] raw_sum;         // suma interna
+    wire       raw_cout;        // carry intern
+
+    full_adder fa0 (.a(A[0]), .b(B[0]), .cin(Cin),      .sum(raw_sum[0]), .cout(carry[0])); // bit 0
+    full_adder fa1 (.a(A[1]), .b(B[1]), .cin(carry[0]), .sum(raw_sum[1]), .cout(carry[1])); // bit 1
+    full_adder fa2 (.a(A[2]), .b(B[2]), .cin(carry[1]), .sum(raw_sum[2]), .cout(carry[2])); // bit 2
+    full_adder fa3 (.a(A[3]), .b(B[3]), .cin(carry[2]), .sum(raw_sum[3]), .cout(carry[3])); // bit 3
+    full_adder fa4 (.a(A[4]), .b(B[4]), .cin(carry[3]), .sum(raw_sum[4]), .cout(carry[4])); // bit 4
+    full_adder fa5 (.a(A[5]), .b(B[5]), .cin(carry[4]), .sum(raw_sum[5]), .cout(carry[5])); // bit 5
+    full_adder fa6 (.a(A[6]), .b(B[6]), .cin(carry[5]), .sum(raw_sum[6]), .cout(carry[6])); // bit 6
+    full_adder fa7 (.a(A[7]), .b(B[7]), .cin(carry[6]), .sum(raw_sum[7]), .cout(raw_cout)); // bit 7
+
+    assign Sum  = enable ? raw_sum  : 8'bz; // suma sau high-z
+    assign Cout = enable ? raw_cout : 1'bz; // carry sau high-z
 endmodule
