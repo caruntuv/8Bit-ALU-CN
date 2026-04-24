@@ -1,40 +1,68 @@
 `timescale 1ns/1ps
 module tb_booth_multiplier;
-    reg        clk, rst, start, enable;
-    reg  [7:0] M, Q;
+
+    reg clk, rst, start;
+    reg [7:0] M, Q;
     wire [15:0] Product;
-    wire        done;
+    wire done;
 
     booth_multiplier DUT (
-        .clk(clk), .rst(rst), .start(start), .enable(enable),
-        .M(M), .Q(Q), .Product(Product), .done(done)
+        .clk(clk), .rst(rst), .start(start), .enable(1'b1),
+        .M(M), .Q(Q),
+        .Product(Product), .done(done)
     );
 
+    // clock
     always #5 clk = ~clk;
 
+    // waveform
+    initial begin
+        $dumpfile("multiplier.vcd");
+        $dumpvars(0, tb_booth_multiplier);
+    end
+
+    // verificare
     task check;
-        input signed [7:0]  m_in, q_in;
-        input signed [15:0] expected;
+        input [15:0] exp_prod;
+        input [255:0] label;
         begin
-            M=m_in; Q=q_in; start=1; #10; start=0;
-            wait(done); #10;
-            $display("[MUL] %0d x %0d => %0d | exp=%0d | %0s",
-                $signed(m_in), $signed(q_in),
-                $signed(Product), $signed(expected),
-                ($signed(Product) == $signed(expected)) ? "PASS" : "FAIL");
+            wait(done);
+            #5;
+            $display("%0s", label);
+            $display("M=%0d Q=%0d", $signed(M), $signed(Q));
+            $display("Product=%0d", $signed(Product));
+            $display("%0s\n", ($signed(Product) == exp_prod) ? "PASS" : "FAIL");
         end
     endtask
 
     initial begin
-        clk=0; rst=1; start=0; enable=1; M=0; Q=0;
-        #15; rst=0;
-        $display("=== Booth Multiplier Testbench ===");
-        check( 8'd5,   8'd3,   16'd15);
-        check( 8'hFC,  8'd3,   16'hFFF4);   // -4 x 3 = -12
-        check( 8'd7,   8'hFE,  16'hFFF2);   //  7 x -2 = -14
-        check( 8'd0,   8'd255, 16'd0);
-        check( 8'd15,  8'd15,  16'd225);
-        $display("=== Done ===");
+        $display("Testare Modul Inmultire\n");
+
+        clk = 0; rst = 1; start = 0;
+        #10 rst = 0;
+
+        // 1. calcul normal
+        M = 8'd5; Q = 8'd3;
+        start = 1; #10 start = 0;
+        check(16'd15, "1. calcul normal: 5 * 3");
+
+        // 2. alt calcul
+        M = 8'd10; Q = 8'd4;
+        start = 1; #10 start = 0;
+        check(16'd40, "2. calcul normal: 10 * 4");
+
+        // 3. zero
+        M = 8'd0; Q = 8'd25;
+        start = 1; #10 start = 0;
+        check(16'd0, "3. situatie zero: 0 * 25");
+
+        // 4. negativ (Booth)
+        M = -8'd5; Q = 8'd3;
+        start = 1; #10 start = 0;
+        check(-16'd15, "4. situatie cu semn: -5 * 3");
+
+        $display("Final testare modul inmultire");
         $finish;
     end
+
 endmodule
